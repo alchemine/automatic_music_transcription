@@ -3,19 +3,13 @@
 Commonly used functions and classes are here.
 """
 
-from itertools import starmap
 from datetime import datetime
 
-import numpy as np
-import tabulate
-from dask import delayed, compute
+from src.core.logger import log_info
 
 
-tprint = lambda dic: print(
-    tabulate(dic, headers="keys", tablefmt="psql")
-)  # print with fancy 'psql' format
 vars_ = lambda obj: {k: v for k, v in vars(obj).items() if not k.startswith("__")}
-str2dt = lambda s, format="%Y-%m-%d": datetime.datetime.strptime(s, format)
+str2dt = lambda s, format="%Y-%m-%d": datetime.strptime(s, format)
 dt2str = lambda dt, format="%Y-%m-%d": dt.strftime(format)
 
 
@@ -33,6 +27,8 @@ def lmap(fn: callable, arr: list, scheduler: str | None = None) -> list:
     Returns:
         list: List of results
     """
+    from dask import delayed, compute
+
     if scheduler is None:
         return list(map(fn, arr))
     else:
@@ -41,32 +37,16 @@ def lmap(fn: callable, arr: list, scheduler: str | None = None) -> list:
             "threads",
             "processes",
         ], f"Invalid scheduler: {scheduler}"
-        tasks = [delayed(fn)(e) for e in arr]
+        tasks = (delayed(fn)(e) for e in arr)
         return list(compute(*tasks, scheduler=scheduler))
 
 
-def lstarmap(fn: callable, *arrs, scheduler: str | None = None) -> list:
-    """List starmap.
+def tprint(dic: dict) -> None:
+    """Table print."""
+    import tabulate
 
-    Args:
-        fn (callable): Function to apply
-        arrs (list): Lists to apply function
-        scheduler (str, optional): Dask scheduler. Defaults to None.
-            - None | "single-threaded": Single-threaded
-            - "threads": Multi-threaded
-            - "processes": Multi-process
-
-    Returns:
-        list: List of results
-    """
-    assert (
-        len(np.unqiue(lmap(len, arrs))) == 1
-    ), "All parameters should have same length."
-    if scheduler is None:
-        return list(starmap(fn, arrs))
-    else:
-        tasks = [delayed(fn)(*es) for es in zip(*arrs)]
-        return list(compute(*tasks, scheduler=scheduler))
+    # print with fancy 'psql' format
+    log_info(tabulate(dic, headers="keys", tablefmt="psql"))
 
 
 def str2bool(s: str | bool) -> bool:

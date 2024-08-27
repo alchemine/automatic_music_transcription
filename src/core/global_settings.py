@@ -4,9 +4,7 @@ This module contains global configurations.
 It should be imported and run at the start of the project to ensure consistent settings across all modules.
 """
 
-import sys
 import warnings
-import logging
 
 import numpy as np
 import pandas as pd
@@ -18,14 +16,6 @@ def configure_global_settings() -> None:
     """Configure global settings."""
     # Warning
     warnings.filterwarnings("ignore")
-
-    # Logging
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="[%(asctime)s] %(levelname)s [%(pathname)s.%(funcName)s():l%(lineno)d] %(message)s",
-        datefmt="%Y/%m/%d %H:%M:%S",
-        stream=sys.stdout,
-    )
 
     # Matplotlib settings
     register_matplotlib_converters()

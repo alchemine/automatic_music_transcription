@@ -1,4 +1,6 @@
-from base_project.core import D
+from src.core import D, T
+
+from time import sleep
 
 
 @D
@@ -33,5 +35,11 @@ def main21():
     return
 
 
+@T
+def f():
+    sleep(1)
+
+
 if __name__ == "__main__":
     main()
+    f()

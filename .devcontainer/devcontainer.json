@@ -6,8 +6,6 @@
     "context": "..",
     "dockerfile": "../Dockerfile"
   },
-
-  // Configure tool-specific properties.
   "customizations": {
     "vscode": {
       "extensions": [
@@ -35,26 +33,30 @@
           "**/__pycache__": true
         },
         "python.testing.pytestEnabled": true,
-        "python.testing.pytestArgs": ["-s", "-vv", "tests"]
+        "python.testing.pytestArgs": ["-s", "-vv", "tests"],
+        "terminal.integrated.env.osx": { "PYTHONPATH": "${workspaceFolder}" },
+        "terminal.integrated.env.linux": { "PYTHONPATH": "${workspaceFolder}" },
+        "terminal.integrated.env.windows": {
+          "PYTHONPATH": "${workspaceFolder}"
+        }
       }
     }
   },
 
-  "mounts": ["source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind"],
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/appuser/.ssh,type=bind"
+  ],
   "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
   "workspaceFolder": "/app",
+  "remoteUser": "appuser",
+  "updateRemoteUserUID": true,
 
   "containerEnv": {
-    "PYTHONPATH": "/app"
+    "ENV": "local"
   },
-  "runArgs": ["--env-file", ".env"],
-  "postCreateCommand": "bash .devcontainer/postCreate.sh"
-
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
-
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {
-  //   "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
-  // },
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  }
 }

@@ -1,15 +1,34 @@
-# Use the Python base image
-ARG VARIANT="3.11-bullseye"
-FROM mcr.microsoft.com/devcontainers/python:0-${VARIANT}
+# Use the base image
+FROM python:3.12-slim-bookworm
 
-# Define the version of Poetry to install
-ARG POETRY_VERSION=1.8.3
-ENV POETRY_VIRTUALENVS_IN_PROJECT=false \
-    POETRY_NO_INTERACTION=true
+# Set the timezone to Asia/Seoul
+ENV TZ Asia/Seoul
 
-# Create a Python virtual environment for Poetry and install it
-RUN pipx install poetry==${POETRY_VERSION}
+# Production(ENV=prd) or development(ENV=dev) or local(ENV=local) environment
+ARG ENV=local
+ENV ENV=$ENV
 
-# Setup for bash
-RUN poetry completions bash >> /home/vscode/.bash_completion && \
-    echo "export PATH=.:$PATH" >> ~/.bashrc
+# Set project directory
+ENV PROJECT_ROOT=/app
+ENV PYTHONPATH=${PROJECT_ROOT}
+WORKDIR ${PROJECT_ROOT}
+
+# Install dependencies
+COPY requirements.txt ${PROJECT_ROOT}/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy configuration files
+COPY config/engine.yaml ${PROJECT_ROOT}/config/engine.yaml
+COPY config/service.${ENV}.yaml ${PROJECT_ROOT}/config/service.yaml
+
+# Copy source files
+COPY src ${PROJECT_ROOT}/src
+
+# Create a non-root user
+RUN adduser --disabled-password --gecos '' appuser
+
+# Change ownership of the project directory
+RUN chown -R appuser:appuser ${PROJECT_ROOT}
+
+# Switch to non-root user
+USER appuser

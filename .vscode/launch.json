@@ -6,7 +6,17 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": true,
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    },
+    {
+      "name": "streamlit debug",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": ["run", "${file}"],
+      "justMyCode": true,
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
     }
   ]
 }
