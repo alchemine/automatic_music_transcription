@@ -1,9 +1,13 @@
 """Logging module."""
 
+import re
 import json
+from datetime import datetime
+from pathlib import Path
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
-from config.load import ENV
+from config import ENV
 
 
 # https://pkg.go.dev/github.com/shafiqaimanx/pastax/colors
@@ -34,26 +38,76 @@ STYLES = {
     "OKCYAN": "\033[96m",
 }
 
+LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(message)s"
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-def setup_logger() -> logging.Logger:
-    """Setup logger.
+
+class ANSIColorRemovingFormatter(logging.Formatter):
+    def format(self, record):
+        formatted = super().format(record)
+        return re.sub(r"\x1b\[[0-9;]*m", "", formatted)
+
+
+def setup_advanced_logger(
+    logger_name: str = None,
+    log_level: str = "INFO",
+    log_format: str = LOG_FORMAT,
+    date_format: str = LOG_DATE_FORMAT,
+    log_to_console: bool = True,
+    log_to_file: bool = True,
+    log_dir: str = "logs",
+    file_rotation: str = "midnight",
+    file_backup_count: int = 7,
+) -> logging.Logger:
+    """
+    Setup an advanced logger with flexible configuration options.
+    Keeps colors in console output, removes them in file output.
+
+    Args:
+        logger_name (str): Name of the logger. If None, root logger is used.
+        log_level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+        log_format (str): Format string for log messages.
+        date_format (str): Format string for timestamps in log messages.
+        log_to_console (bool): Whether to log to console.
+        log_to_file (bool): Whether to log to file.
+        log_dir (str): Directory to store log files.
+        log_file_prefix (str): Prefix for log file names.
+        file_rotation (str): When to rotate the log file (e.g., 'midnight', 'h' for hourly).
+        file_backup_count (int): Number of backup log files to keep.
 
     Returns:
-        logging.Logger: The logger object.
+        logging.Logger: Configured logger object.
     """
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    # Create logger
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(getattr(logging, log_level.upper()))
 
-    formatter = logging.Formatter(
-        # "[%(asctime)s] %(levelname)s [%(pathname)s.%(funcName)s():l%(lineno)d] %(message)s",
-        "[%(asctime)s] %(levelname)-7s | %(message)s",
-        datefmt="%Y/%m/%d %H:%M:%S",
-    )
+    # Create formatters
+    color_formatter = logging.Formatter(log_format, datefmt=date_format)
+    no_color_formatter = ANSIColorRemovingFormatter(log_format, datefmt=date_format)
 
-    # Log to console using StreamHandler
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
+    # Console handler (with colors)
+    if log_to_console:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(color_formatter)
+        logger.addHandler(console_handler)
+
+    # File handler (without colors)
+    if log_to_file:
+        log_dir_path = Path(log_dir)
+        log_dir_path.mkdir(parents=True, exist_ok=True)
+
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        log_file_name = f"{current_date}.log"
+        log_file_path = log_dir_path / log_file_name
+
+        file_handler = TimedRotatingFileHandler(
+            filename=log_file_path,
+            when=file_rotation,
+            backupCount=file_backup_count,
+        )
+        file_handler.setFormatter(no_color_formatter)
+        logger.addHandler(file_handler)
 
     return logger
 
@@ -170,7 +224,7 @@ def log_api(msg: str, error: bool = False) -> None:
         log_success(msg)
 
 
-logger = setup_logger()
+logger = setup_advanced_logger()
 
 
 if __name__ == "__main__":

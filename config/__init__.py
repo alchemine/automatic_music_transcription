@@ -12,9 +12,14 @@ def load_yaml(path: str) -> EasyDict:
     return EasyDict(config)
 
 
-ENV = environ["ENV"]
+##################################################
+# Configurations
+##################################################
 CFG_SERVICE = load_yaml("config/service.yaml")
 CFG_ENGINE = load_yaml("config/engine.yaml")
+
+ENV = environ["ENV"]
+DEBUG = False
 
 
 if __name__ == "__main__":
