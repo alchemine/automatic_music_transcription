@@ -1,7 +1,11 @@
 """Requests module for handling HTTP requests."""
 
+from typing import Any
+
 import requests
 from requests import Response, RequestException
+import asyncio
+import aiohttp
 
 from src.core.logger import log_api
 
@@ -91,6 +95,46 @@ def safe_post(url: str, json: dict, headers: dict = HEADERS) -> dict:
         log = get_request_log(url, headers, json)
         log_api(log, error=True)
         raise APIError(url, headers, json, response)
+
+
+async def post_request(session: aiohttp.ClientSession, url: str, data: dict) -> list | dict:
+    """Post request using aiohttp.
+
+    Args:
+        session (aiohttp.ClientSession): aiohttp session.
+        url (str): URL to post.
+        data (dict): Data to post.
+
+    Returns:
+        list | dict: Response data.
+    """
+    async with session.post(
+        url=url,
+        headers=HEADERS,
+        json=data,
+    ) as response:
+        response.raise_for_status()
+        return await response.json()
+
+
+async def async_post(url: str, batch: list[dict]) -> list[Any]:
+    """Post requests asynchronously.
+
+    Args:
+        url (str): URL to post.
+        batch (list[dict]): List of data to post.
+
+    Returns:
+        list[Any]: List of response data.
+    
+    Examples:
+        import asyncio
+        asyncio.run(async_post(url, batch))
+    """
+    async with aiohttp.ClientSession() as session:
+        futures = [post_request(session, url, data) for data in batch]
+        responses = await asyncio.gather(*futures)
+    return responses
 
 
 if __name__ == "__main__":
